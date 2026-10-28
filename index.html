@@ -448,22 +448,42 @@
     gap: clamp(10px, 1.2vw, 18px);
     color: var(--green-ink);
   }
-  /* giant flash: JS sets --dx/--dy/--s so the mark fills the screen, then drops the class */
-  .intro-mark { transition: transform .6s cubic-bezier(.7, 0, .15, 1); }
-  .intro-name { transition: opacity .4s ease .35s, transform .4s var(--ease) .35s; }
+  /* giant flash: JS sets --dx/--dy/--s so the mark fills the screen, adds noise, then hard-cuts to the lockup */
   .intro--pending .intro-lockup { opacity: 0; }
-  .intro--big .intro-mark {
-    transition: none;
-    transform: translate(var(--dx), var(--dy)) scale(var(--s));
-    animation: flash .18s steps(2) 2;
+  .intro-noise {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    display: none;
+    image-rendering: pixelated;
+    mix-blend-mode: multiply;
+    pointer-events: none;
   }
-  .intro--big .intro-name { opacity: 0; transform: translateX(-12px); transition: none; }
-  @keyframes flash { 50% { opacity: .15; } }
+  .intro--big .intro-noise { display: block; }
+  .intro--big .intro-mark {
+    transform: translate(var(--dx), var(--dy)) scale(var(--s));
+    text-shadow: -.035em 0 rgba(255, 40, 90, .55), .035em 0 rgba(0, 200, 255, .55);
+    animation: flash .5s steps(1) both;
+  }
+  .intro--big .intro-name { opacity: 0; }
+  .intro-name { transition: opacity .35s ease; }
+  /* hard flicker plus horizontal slice tearing */
+  @keyframes flash {
+    0%   { opacity: 1; clip-path: inset(0); translate: 0; }
+    12%  { opacity: .2; }
+    18%  { opacity: 1; clip-path: inset(22% 0 48% 0); translate: -2% 0; }
+    26%  { clip-path: inset(0); translate: 0; }
+    40%  { clip-path: inset(62% 0 12% 0); translate: 3% 0; }
+    48%  { clip-path: inset(0); translate: 0; opacity: .35; }
+    56%  { opacity: 1; }
+    72%  { clip-path: inset(8% 0 70% 0); translate: -1.5% 0; }
+    80%  { clip-path: inset(0); translate: 0; }
+    90%  { opacity: .25; }
+    100% { opacity: 1; }
+  }
   .intro-mark {
-    font-family: var(--display); font-stretch: 125%; font-weight: 900;
+    font-family: var(--display); font-stretch: 100%; font-weight: 800;
     font-size: clamp(3.2rem, 10vw, 7.5rem);
     line-height: .78;
-    letter-spacing: -.02em;
+    letter-spacing: -.06em;
   }
   .intro-name {
     font-family: var(--display); font-weight: 500;
@@ -506,6 +526,7 @@
 <body class="no-js">
 
 <div class="intro intro--pending" id="intro" aria-hidden="true">
+  <canvas class="intro-noise" id="intro-noise"></canvas>
   <div class="intro-lockup">
     <span class="intro-mark">YK</span>
     <span class="intro-name">Yukai's<br>Personal Page</span>
@@ -777,6 +798,33 @@ function playIntro(reduced) {
 
   // Blow the mark up to fill the screen, flash it, then let it settle into the lockup
   const mark = intro.querySelector(".intro-mark");
+
+  // Low-res TV static with a few torn scan bars; returns a stop function
+  const noise = () => {
+    const c = document.getElementById("intro-noise");
+    const w = c.width = Math.ceil(innerWidth / 3);
+    const h = c.height = Math.ceil(innerHeight / 3);
+    const g = c.getContext("2d");
+    const img = g.createImageData(w, h);
+    let id = 0;
+    const tick = () => {
+      const d = img.data;
+      for (let i = 0; i < d.length; i += 4) {
+        const v = 185 + Math.random() * 70;
+        d[i] = d[i + 1] = d[i + 2] = v;
+        d[i + 3] = 255;
+      }
+      g.putImageData(img, 0, 0);
+      for (let n = 0; n < 4; n++) {
+        g.fillStyle = Math.random() < 0.5 ? "rgba(11,122,71,.35)" : "rgba(5,10,7,.25)";
+        g.fillRect(0, Math.random() * h, w, 1 + Math.random() * 6);
+      }
+      id = requestAnimationFrame(tick);
+    };
+    tick();
+    return () => cancelAnimationFrame(id);
+  };
+
   const play = () => {
     if (done) return;
     const r = mark.getBoundingClientRect();
@@ -786,8 +834,9 @@ function playIntro(reduced) {
     intro.style.setProperty("--dy", `${innerHeight / 2 - (r.top + r.height / 2)}px`);
     intro.classList.add("intro--big");
     intro.classList.remove("intro--pending");
-    setTimeout(() => intro.classList.remove("intro--big"), 650);
-    setTimeout(finish, 2600);
+    const stop = noise();
+    setTimeout(() => { stop(); intro.classList.remove("intro--big"); }, 500);
+    setTimeout(finish, 2100);
   };
   // measure with the real font, but never wait long for it
   const fontReady = document.fonts
