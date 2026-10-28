@@ -458,32 +458,13 @@
     pointer-events: none;
   }
   .intro--big .intro-noise { display: block; }
-  .intro--big .intro-mark {
-    transform: translate(var(--dx), var(--dy)) scale(var(--s));
-    text-shadow: -.035em 0 rgba(255, 40, 90, .55), .035em 0 rgba(0, 200, 255, .55);
-    animation: flash .5s steps(1) both;
-  }
+  .intro--big .intro-mark { transform: translate(var(--dx), var(--dy)) scale(var(--s)); }
   .intro--big .intro-name { opacity: 0; }
   .intro-name { transition: opacity .35s ease; }
-  /* hard flicker plus horizontal slice tearing */
-  @keyframes flash {
-    0%   { opacity: 1; clip-path: inset(0); translate: 0; }
-    12%  { opacity: .2; }
-    18%  { opacity: 1; clip-path: inset(22% 0 48% 0); translate: -2% 0; }
-    26%  { clip-path: inset(0); translate: 0; }
-    40%  { clip-path: inset(62% 0 12% 0); translate: 3% 0; }
-    48%  { clip-path: inset(0); translate: 0; opacity: .35; }
-    56%  { opacity: 1; }
-    72%  { clip-path: inset(8% 0 70% 0); translate: -1.5% 0; }
-    80%  { clip-path: inset(0); translate: 0; }
-    90%  { opacity: .25; }
-    100% { opacity: 1; }
-  }
   .intro-mark {
-    font-family: var(--display); font-stretch: 100%; font-weight: 800;
-    font-size: clamp(3.2rem, 10vw, 7.5rem);
-    line-height: .78;
-    letter-spacing: -.06em;
+    display: block;
+    height: clamp(2.6rem, 7.5vw, 5.6rem);
+    width: auto;
   }
   .intro-name {
     font-family: var(--display); font-weight: 500;
@@ -528,7 +509,7 @@
 <div class="intro intro--pending" id="intro" aria-hidden="true">
   <canvas class="intro-noise" id="intro-noise"></canvas>
   <div class="intro-lockup">
-    <span class="intro-mark">YK</span>
+    <svg class="intro-mark" viewBox="0 0 17.2 10" role="img" aria-label="YK"><path fill="currentColor" d="M0 0h2.6v6h-2.6zM5.4 0h2.6v6h-2.6zM0 3.4h8v2.6h-8zM2.7 6h2.6v4h-2.6zM9.2 0h2.6v10h-2.6zM11.8 3.7h2v2.6h-2zM12.6 1.6h2.6v2.6h-2.6zM14.6 0h2.6v2.6h-2.6zM12.6 5.8h2.6v2.6h-2.6zM14.6 7.4h2.6v2.6h-2.6zM2.7 6H1.9A0.8 0.8 0 0 1 2.7 6.8zM12.6 3.7H11.8A0.8 0.8 0 0 0 12.6 2.9zM14.6 1.6H13.8A0.8 0.8 0 0 0 14.6 0.8zM12.6 6.3H11.8A0.8 0.8 0 0 1 12.6 7.1zM14.6 8.4H13.8A0.8 0.8 0 0 1 14.6 9.2z"/></svg>
     <span class="intro-name">Yukai's<br>Personal Page</span>
   </div>
 </div>
