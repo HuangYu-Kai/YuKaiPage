@@ -5,32 +5,37 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>YUKAI // Graphics & C++ Engine Lab</title>
 <meta name="description" content="Yukai — self-taught real-time rendering & modern C++ engineer. Volumetric clouds, Gerstner waves, compute shader grass.">
-<meta name="theme-color" content="#0b0f17">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='16' fill='%230b0f17'/%3E%3Crect x='7' y='12' width='18' height='8' rx='4' fill='%23b8f5c9'/%3E%3C/svg%3E">
+<meta name="theme-color" content="#050a07">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23b8f5c9'/%3E%3Crect x='7' y='7' width='18' height='18' fill='none' stroke='%230a0c0b' stroke-width='3'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&family=Big+Shoulders+Stencil+Display:wght@700;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #0b0f17;
-    --bg-2: #10161f;
-    --panel: rgba(16, 22, 31, 0.72);
+    /* dark (hero) */
+    --void: #050a07;
     --mint: #b8f5c9;
     --mint-deep: #5fd99a;
+    --track: #d4f06a;
     --cyan: #00f0ff;
-    --acid: #e2ff00;
     --white: #f8fafc;
     --gray: #94a3b8;
-    --dim: #4b5563;
-    --hair: rgba(184, 245, 201, 0.2);
-    --hair-strong: rgba(184, 245, 201, 0.45);
-    --glow: 0 0 18px rgba(184, 245, 201, 0.35);
+
+    /* light (content) */
+    --paper: #f2f4f1;
+    --card: #ffffff;
+    --ink: #0a0c0b;
+    --ink-2: #4a524d;
+    --ink-3: #8a938d;
+    --rule: rgba(10, 12, 11, 0.14);
+    --green-ink: #0b7a47;
 
     --display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+    --stencil: "Big Shoulders Stencil Display", "Archivo", Impact, sans-serif;
     --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
 
     --gutter: clamp(16px, 4vw, 48px);
-    --max: 1280px;
+    --max: 1320px;
     --ease: cubic-bezier(.2, .7, .1, 1);
   }
 
@@ -38,270 +43,170 @@
   html { scroll-behavior: smooth; }
   body {
     margin: 0;
-    background: var(--bg);
-    color: var(--white);
+    background: var(--paper);
+    color: var(--ink);
     font-family: var(--display);
-    font-stretch: 100%;
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
     overflow-x: hidden;
   }
-  /* lab graph paper + faint scanlines */
-  body::before {
-    content: "";
-    position: fixed; inset: 0;
-    pointer-events: none;
-    z-index: 0;
-    background-image:
-      linear-gradient(rgba(184,245,201,.045) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(184,245,201,.045) 1px, transparent 1px),
-      linear-gradient(rgba(184,245,201,.018) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(184,245,201,.018) 1px, transparent 1px);
-    background-size: 120px 120px, 120px 120px, 24px 24px, 24px 24px;
-  }
-  body::after {
-    content: "";
-    position: fixed; inset: 0;
-    pointer-events: none;
-    z-index: 100;
-    background: repeating-linear-gradient(0deg, rgba(255,255,255,.018) 0 1px, transparent 1px 3px);
-    mix-blend-mode: overlay;
-  }
-  ::selection { background: var(--mint); color: var(--bg); }
-
+  ::selection { background: var(--mint); color: var(--ink); }
   a { color: inherit; text-decoration: none; }
-  .wrap { position: relative; z-index: 1; max-width: var(--max); margin: 0 auto; padding: 0 var(--gutter); }
-  .mono { font-family: var(--mono); }
+  .wrap { position: relative; max-width: var(--max); margin: 0 auto; padding: 0 var(--gutter); }
+
   .tag {
     font-family: var(--mono);
     font-size: 11px;
     letter-spacing: .14em;
     text-transform: uppercase;
-    color: var(--gray);
   }
-  .tag b { color: var(--mint); font-weight: 500; }
 
   /* ---------- capsules ---------- */
   .pill {
     display: inline-flex; align-items: center; gap: 8px;
     padding: 5px 12px;
     border-radius: 9999px;
-    border: 1px solid var(--hair-strong);
+    border: 1px solid currentColor;
     font-family: var(--mono);
     font-size: 11px;
     letter-spacing: .12em;
     text-transform: uppercase;
     white-space: nowrap;
-    color: var(--mint);
   }
-  .pill--solid { background: var(--mint); color: var(--bg); border-color: var(--mint); font-weight: 700; }
-  .pill--cyan { color: var(--cyan); border-color: rgba(0,240,255,.5); }
-  .pill--dash { color: var(--gray); border: 1px dashed var(--dim); }
-  .dot {
-    width: 8px; height: 8px; border-radius: 50%;
-    background: currentColor;
-    flex: none;
-  }
+  .pill--mint { background: var(--mint); color: var(--ink); border-color: var(--mint); font-weight: 700; }
+  .pill--ink { background: var(--ink); color: var(--mint); border-color: var(--ink); font-weight: 700; }
+  .pill--dash { border-style: dashed; color: var(--ink-3); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; flex: none; }
   .dot--pulse { animation: pulse 1.8s ease-out infinite; }
-  .dot--acid { background: var(--acid); color: var(--acid); }
   @keyframes pulse {
     0%   { box-shadow: 0 0 0 0 currentColor; }
     70%  { box-shadow: 0 0 0 8px transparent; }
     100% { box-shadow: 0 0 0 0 transparent; }
   }
 
-  /* corner crosshairs */
-  .xh { position: relative; }
-  .xh::before, .xh::after,
-  .xh > .xh-b::before, .xh > .xh-b::after {
-    content: "+";
-    position: absolute;
-    font-family: var(--mono);
-    font-size: 14px;
-    line-height: 1;
-    color: var(--mint);
-    opacity: .7;
-    pointer-events: none;
-  }
-  .xh::before { top: -7px; left: -5px; }
-  .xh::after  { top: -7px; right: -5px; }
-  .xh > .xh-b::before { bottom: -7px; left: -5px; }
-  .xh > .xh-b::after  { bottom: -7px; right: -5px; }
-
-  /* measurement ruler */
-  .ruler {
-    height: 14px;
-    background:
-      repeating-linear-gradient(90deg, var(--hair-strong) 0 1px, transparent 1px 50px) bottom / 100% 14px no-repeat,
-      repeating-linear-gradient(90deg, var(--hair) 0 1px, transparent 1px 10px) bottom / 100% 6px no-repeat;
-    border-bottom: 1px solid var(--hair);
-  }
-
-  /* ---------- top status bar ---------- */
+  /* ---------- top bar ---------- */
   .topbar {
-    position: sticky; top: 0; z-index: 50;
-    background: rgba(11,15,23,.82);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border-bottom: 1px solid var(--hair);
+    position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+    color: var(--white);
+    background: rgba(5,10,7,.86);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(184,245,201,.14);
   }
   .topbar .wrap {
     display: flex; align-items: center; justify-content: space-between;
-    gap: 16px; min-height: 52px; flex-wrap: wrap;
+    gap: 16px; min-height: 52px;
   }
-  .topbar-left { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .topbar-left { display: flex; align-items: center; gap: 16px; min-width: 0; }
+  .topbar .pill { color: var(--mint); border-color: rgba(184,245,201,.5); }
+  .topbar .tag { color: var(--gray); }
+  .topbar .tag b { color: var(--mint); font-weight: 500; }
   .topbar nav { display: flex; gap: 22px; }
-  .topbar nav a {
-    font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase;
-    color: var(--gray); transition: color .2s;
-  }
+  .topbar nav a { color: var(--gray); transition: color .2s; }
   .topbar nav a:hover { color: var(--mint); }
   .clock { color: var(--white); }
 
-  /* ---------- hero ---------- */
-  .hero { padding: clamp(48px, 8vw, 110px) 0 clamp(40px, 6vw, 80px); }
-  .hero-grid {
-    display: grid;
-    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
-    gap: clamp(32px, 5vw, 72px);
-    align-items: center;
+  /* ---------- hero: glass-brick specimen ---------- */
+  .hero {
+    position: relative;
+    min-height: 100vh;
+    min-height: 100svh;
+    background: radial-gradient(ellipse at 50% 40%, #0d3a25, var(--void) 70%);
+    color: var(--white);
+    overflow: hidden;
+    isolation: isolate;
   }
-  .hero-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 28px; }
+  #glass { position: absolute; inset: 0; width: 100%; height: 100%; display: block; z-index: -2; }
+  .hero::after {
+    content: "";
+    position: absolute; inset: 0; z-index: -1;
+    background:
+      linear-gradient(0deg, rgba(5,10,7,.92) 0%, rgba(5,10,7,.55) 30%, transparent 62%),
+      linear-gradient(180deg, rgba(5,10,7,.6) 0%, transparent 16%);
+    pointer-events: none;
+  }
+
+  /* face-tracking markers */
+  .trackers { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+  .trk {
+    position: absolute;
+    width: 26px; height: 26px;
+    margin: -13px 0 0 -13px;
+    border: 2px solid var(--track);
+    box-shadow: -2px 0 0 -0px rgba(255,40,90,.55), 2px 0 0 0 rgba(0,240,255,.5);
+    transition: left .7s var(--ease), top .7s var(--ease), opacity .4s;
+  }
+  .trk span {
+    position: absolute; bottom: calc(100% + 6px); left: 50%;
+    transform: translateX(-50%);
+    font-family: var(--mono); font-size: 11px; color: #fff; white-space: nowrap;
+    text-shadow: -1px 0 rgba(255,40,90,.7), 1px 0 rgba(0,240,255,.7);
+  }
+
+  .hero-inner {
+    position: relative; z-index: 1;
+    min-height: inherit;
+    display: flex; flex-direction: column; justify-content: flex-end;
+    padding-top: 96px;
+    padding-bottom: clamp(28px, 4vw, 48px);
+  }
+  .hero-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 22px; }
+  .hero-meta .pill { color: var(--mint); border-color: rgba(184,245,201,.55); background: rgba(5,10,7,.4); }
+  .hero-meta .pill--mint { color: var(--ink); background: var(--mint); }
   .hero h1 {
     margin: 0;
-    font-family: var(--display);
     font-stretch: 125%;
     font-weight: 800;
-    font-size: clamp(2.6rem, 7.4vw, 7rem);
-    line-height: .9;
+    font-size: clamp(2.8rem, 9vw, 8.4rem);
+    line-height: .86;
     letter-spacing: -.02em;
     text-transform: uppercase;
+    text-shadow: -2px 0 rgba(255,40,90,.35), 2px 0 rgba(0,240,255,.35);
   }
   .hero h1 .slash { color: var(--mint); font-weight: 300; }
   .hero h1 .sub-title {
     display: block;
-    margin-top: .25em;
-    font-size: .36em;
+    margin-top: .3em;
+    font-size: .32em;
     font-weight: 600;
     letter-spacing: .02em;
     line-height: 1.05;
     color: var(--mint);
+    text-shadow: none;
   }
-  .glitch { position: relative; display: inline-block; }
-  .glitch::before, .glitch::after {
-    content: attr(data-text);
-    position: absolute; inset: 0;
-    opacity: 0;
-    pointer-events: none;
+  .hero-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 32px; align-items: end;
+    margin-top: 28px;
   }
-  .glitch::before { color: var(--cyan); }
-  .glitch::after  { color: var(--acid); }
-  .hero h1:hover .glitch::before { opacity: .8; animation: glitchA .35s steps(2) 2; }
-  .hero h1:hover .glitch::after  { opacity: .8; animation: glitchB .35s steps(2) 2; }
-  @keyframes glitchA {
-    0% { clip-path: inset(10% 0 70% 0); transform: translate(-4px, 0); }
-    50% { clip-path: inset(60% 0 15% 0); transform: translate(3px, 0); }
-    100% { clip-path: inset(40% 0 40% 0); transform: translate(0); opacity: 0; }
-  }
-  @keyframes glitchB {
-    0% { clip-path: inset(70% 0 5% 0); transform: translate(4px, 0); }
-    50% { clip-path: inset(20% 0 60% 0); transform: translate(-3px, 0); }
-    100% { clip-path: inset(40% 0 40% 0); transform: translate(0); opacity: 0; }
-  }
-  .hero-lede {
-    max-width: 58ch;
-    margin: 32px 0 0;
-    font-size: clamp(1rem, 1.3vw, 1.15rem);
-    color: var(--gray);
-  }
+  .hero-lede { max-width: 60ch; margin: 0; font-size: clamp(1rem, 1.25vw, 1.12rem); color: #c9d4ce; }
   .hero-lede strong { color: var(--white); font-weight: 600; }
-  .hero-cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 36px; }
+  .hero-cta { display: flex; flex-wrap: wrap; gap: 12px; }
   .btn {
     display: inline-flex; align-items: center; gap: 10px;
     padding: 14px 24px;
     border-radius: 9999px;
     font-family: var(--mono); font-size: 12px; letter-spacing: .14em; text-transform: uppercase;
     border: 1px solid var(--mint);
-    transition: background .25s var(--ease), color .25s var(--ease), box-shadow .25s var(--ease), transform .25s var(--ease);
+    transition: background .25s var(--ease), color .25s var(--ease), transform .25s var(--ease);
   }
-  .btn--fill { background: var(--mint); color: var(--bg); font-weight: 700; }
-  .btn--fill:hover { background: var(--mint-deep); border-color: var(--mint-deep); box-shadow: var(--glow); transform: translateY(-2px); }
-  .btn--ghost { color: var(--mint); }
-  .btn--ghost:hover { background: rgba(184,245,201,.08); transform: translateY(-2px); }
-
-  /* specimen capsule */
-  .specimen { position: relative; }
-  .specimen-label { display: flex; justify-content: space-between; margin-bottom: 14px; gap: 8px; flex-wrap: wrap; }
-  .capsule {
-    position: relative;
-    aspect-ratio: 3 / 4;
-    max-height: 520px;
-    margin: 0 auto;
-    border-radius: 9999px;
-    border: 1px solid var(--hair-strong);
-    background: var(--bg-2);
-    overflow: hidden;
-    box-shadow: inset 0 0 60px rgba(184,245,201,.06), 0 0 0 8px rgba(184,245,201,.03);
-  }
-  .capsule canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
-  /* glass highlight */
-  .capsule::before {
-    content: "";
-    position: absolute; z-index: 2;
-    top: 6%; left: 14%; width: 16%; height: 46%;
-    border-radius: 9999px;
-    background: linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,0));
-    pointer-events: none;
-  }
-  .capsule::after {
-    content: "";
-    position: absolute; z-index: 2; inset: 0;
-    border-radius: inherit;
-    background: linear-gradient(120deg, rgba(255,255,255,.05), transparent 40%);
-    pointer-events: none;
-  }
-  .capsule-readout {
-    position: absolute; z-index: 3; left: 50%; bottom: 9%;
-    transform: translateX(-50%);
-    text-align: center;
-  }
-  .capsule-readout .val {
-    display: block;
-    font-family: var(--mono); font-size: 22px; font-weight: 700;
-    color: var(--mint);
-    text-shadow: var(--glow);
-  }
-  .specimen-scale {
-    position: absolute; top: 12%; bottom: 12%; right: -22px; width: 12px;
-    background: repeating-linear-gradient(0deg, var(--hair-strong) 0 1px, transparent 1px 12px);
-  }
-  .specimen-scale::after {
-    content: "Λ 4.2m";
-    position: absolute; top: 50%; left: 16px;
-    transform: rotate(90deg) translateX(-50%);
-    transform-origin: left top;
-    font-family: var(--mono); font-size: 10px; letter-spacing: .14em; color: var(--gray); white-space: nowrap;
-  }
-
-  .coords {
+  .btn--fill { background: var(--mint); color: var(--ink); font-weight: 700; }
+  .btn--fill:hover { background: #fff; border-color: #fff; transform: translateY(-2px); }
+  .btn--ghost { color: var(--mint); background: rgba(5,10,7,.35); }
+  .btn--ghost:hover { background: rgba(184,245,201,.14); transform: translateY(-2px); }
+  .hero-foot {
     display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;
-    margin-top: clamp(40px, 6vw, 72px);
-    padding-top: 10px;
+    margin-top: clamp(28px, 4vw, 48px);
+    padding-top: 12px;
+    border-top: 1px solid rgba(184,245,201,.18);
+    color: var(--gray);
   }
+  .hero-foot b { color: var(--mint); font-weight: 500; }
 
   /* ---------- marquee ---------- */
-  .marquee {
-    position: relative; z-index: 1;
-    background: var(--mint);
-    color: var(--bg);
-    overflow: hidden;
-    border-top: 1px solid var(--mint);
-    border-bottom: 1px solid var(--mint);
-  }
-  .marquee-track {
-    display: flex; width: max-content;
-    animation: marquee 38s linear infinite;
-  }
+  .marquee { background: var(--mint); color: var(--ink); overflow: hidden; }
+  .marquee-track { display: flex; width: max-content; animation: marquee 38s linear infinite; }
   .marquee:hover .marquee-track { animation-play-state: paused; }
   .marquee span {
     padding: 16px 0;
@@ -313,176 +218,220 @@
   .marquee span::after { content: "\00a0"; }
   @keyframes marquee { to { transform: translateX(-50%); } }
 
-  /* ---------- sections ---------- */
-  section { position: relative; z-index: 1; scroll-margin-top: 56px; }
-  footer { scroll-margin-top: 56px; }
-  .section { padding: clamp(72px, 10vw, 140px) 0; }
+  /* ---------- light sections ---------- */
+  .section { padding: clamp(72px, 10vw, 140px) 0; scroll-margin-top: 52px; }
   .sec-head {
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    align-items: end;
-    gap: 24px;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: stretch;
+    gap: clamp(16px, 2.4vw, 32px);
     margin-bottom: clamp(36px, 5vw, 64px);
+    padding-bottom: 20px;
+    border-bottom: 2px solid var(--ink);
   }
-  .sec-idx {
-    font-family: var(--mono); font-size: 12px; letter-spacing: .14em;
-    background: var(--mint); color: var(--bg); font-weight: 700;
-    padding: 6px 10px;
+  .sec-num {
+    display: grid; place-items: center;
+    min-width: 1.4em;
+    padding: 0 .12em;
+    background: var(--mint);
+    font-family: var(--stencil); font-weight: 900;
+    font-size: clamp(4rem, 10vw, 8.5rem);
+    line-height: .9;
   }
+  .sec-title { display: flex; flex-direction: column; justify-content: space-between; gap: 12px; min-width: 0; }
+  .sec-title .tag { color: var(--ink-2); display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
   .sec-head h2 {
     margin: 0;
     font-stretch: 125%;
     font-weight: 800;
-    font-size: clamp(1.9rem, 4.6vw, 3.8rem);
-    line-height: .95;
+    font-size: clamp(1.6rem, 5vw, 4.2rem);
+    line-height: .92;
     letter-spacing: -.01em;
     text-transform: uppercase;
   }
-  .sec-head .ruler { grid-column: 1 / -1; }
+  .lede { max-width: 62ch; color: var(--ink-2); margin: 0 0 40px; }
 
-  /* ---------- roadmap ---------- */
-  .timeline {
-    position: relative;
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 28px;
-    list-style: none; margin: 0; padding: 36px 0 0;
+  /* barcode */
+  .barcode {
+    height: 28px; width: 96px;
+    background: repeating-linear-gradient(90deg,
+      var(--ink) 0 2px, transparent 2px 3px, var(--ink) 3px 4px, transparent 4px 7px,
+      var(--ink) 7px 10px, transparent 10px 11px, var(--ink) 11px 12px, transparent 12px 15px);
   }
-  .timeline::before {
-    content: "";
-    position: absolute; top: 12px; left: 0; right: 0; height: 1px;
-    background: linear-gradient(90deg, var(--mint) 0 18%, var(--hair) 18% 100%);
-  }
-  .node {
-    position: absolute; top: -30px; left: 24px;
-    width: 13px; height: 13px; border-radius: 50%;
-    border: 1px solid var(--mint); background: var(--bg);
-  }
-  .phase--active .node { background: var(--mint); box-shadow: var(--glow); }
 
-  .card {
-    position: relative;
-    background: var(--panel);
-    border: 1px solid var(--hair);
-    padding: 28px 24px 24px;
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
-    transition: border-color .3s var(--ease), transform .3s var(--ease), box-shadow .3s var(--ease);
-  }
-  .card:hover { border-color: var(--hair-strong); transform: translateY(-4px); box-shadow: 0 18px 40px -20px rgba(0,0,0,.8); }
-  .phase--active { border-color: var(--hair-strong); }
-  .phase-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 22px; }
-  .phase-id { font-family: var(--mono); font-size: 12px; letter-spacing: .14em; color: var(--mint); }
-  .phase h3 {
-    margin: 0 0 6px;
-    font-stretch: 112%;
-    font-weight: 700;
-    font-size: clamp(1.25rem, 1.8vw, 1.55rem);
-    line-height: 1.1;
-    text-transform: uppercase;
-  }
-  .phase .codename { font-family: var(--mono); font-size: 12px; letter-spacing: .1em; color: var(--gray); }
-  .focus { list-style: none; padding: 0; margin: 22px 0 26px; border-top: 1px solid var(--hair); }
-  .focus li {
-    display: flex; gap: 12px; align-items: baseline;
-    padding: 10px 0;
-    border-bottom: 1px solid rgba(148,163,184,.12);
-    font-size: 15px; color: var(--white);
-  }
-  .focus li::before { content: "+"; font-family: var(--mono); color: var(--mint); flex: none; }
-  .focus code { font-family: var(--mono); font-size: 13px; color: var(--mint); }
-  .meter { display: grid; gap: 8px; }
-  .meter-row { display: flex; justify-content: space-between; }
-  .meter-bar { height: 6px; border-radius: 9999px; background: rgba(148,163,184,.14); overflow: hidden; }
-  .meter-bar i {
-    display: block; height: 100%; width: 0;
-    border-radius: inherit;
-    background: var(--mint);
-    transition: width 1.4s var(--ease) .2s;
-  }
-  .phase--next .meter-bar i { background: var(--cyan); }
-  .in .meter-bar i { width: var(--p); }
-
-  /* ---------- vault ---------- */
-  .vault-intro { max-width: 60ch; color: var(--gray); margin: -24px 0 40px; }
-  .vault {
+  /* ---------- roadmap: packaging cards ---------- */
+  .packs {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 20px;
+    list-style: none; margin: 0; padding: 0;
   }
-  .cell {
-    position: relative;
+  .pack {
     display: flex; flex-direction: column;
-    min-height: 300px;
-    border: 1px solid var(--hair);
-    border-radius: 28px;
-    background: var(--bg-2);
-    overflow: hidden;
-    transition: border-color .3s var(--ease), transform .3s var(--ease);
+    background: var(--card);
+    border: 1px solid var(--rule);
+    padding: 16px;
+    transition: transform .35s var(--ease), box-shadow .35s var(--ease);
   }
-  .cell:hover { border-color: var(--hair-strong); transform: translateY(-4px); }
-  .cell-view {
-    position: relative; flex: 1;
-    display: grid; place-items: center;
-    margin: 12px 12px 0;
-    border-radius: 18px;
-    background:
-      repeating-linear-gradient(135deg, rgba(226,255,0,.07) 0 10px, transparent 10px 20px),
-      #0d131c;
+  .pack:hover { transform: translateY(-6px); box-shadow: 0 24px 48px -28px rgba(10,12,11,.45); }
+  .pack-top {
+    display: flex; justify-content: space-between; align-items: center; gap: 10px;
+    margin-bottom: 14px;
+  }
+  .logo {
+    display: inline-grid; place-items: center;
+    width: 30px; height: 30px;
+    background: var(--ink); color: var(--mint);
+    font-family: var(--display); font-stretch: 125%; font-weight: 900; font-size: 12px;
+  }
+  .pack-face {
+    position: relative;
+    aspect-ratio: 16 / 10;
+    background: var(--mint);
+    display: flex; align-items: flex-end; justify-content: space-between;
+    padding: 14px 16px;
     overflow: hidden;
+  }
+  .pack-face .big {
+    font-family: var(--stencil); font-weight: 900;
+    font-size: clamp(6rem, 11vw, 9.5rem);
+    line-height: .78;
+    letter-spacing: -.02em;
+  }
+  .pack-face .code { position: absolute; top: 12px; left: 16px; }
+  .pack-face .seal {
+    display: grid; place-items: center; text-align: center;
+    width: 76px; height: 76px; border-radius: 50%;
+    background: var(--ink); color: var(--mint);
+    font-family: var(--mono); font-weight: 700; font-size: 18px; line-height: 1;
+    transform: rotate(-12deg);
+  }
+  .pack-face .seal small { display: block; font-size: 9px; letter-spacing: .12em; margin-top: 4px; }
+  .pack--next .pack-face {
+    background: repeating-linear-gradient(135deg, var(--mint) 0 14px, #d6fadf 14px 28px);
+  }
+  .pack--target .pack-face {
+    background: var(--paper);
+    outline: 1px dashed var(--ink-3); outline-offset: -1px;
+    color: var(--ink-3);
+  }
+  .pack--target .seal { background: transparent; color: var(--ink-3); border: 1px dashed var(--ink-3); }
+
+  .pack h3 {
+    margin: 18px 0 4px;
+    font-stretch: 112%;
+    font-weight: 800;
+    font-size: clamp(1.2rem, 1.7vw, 1.5rem);
+    line-height: 1.08;
+    text-transform: uppercase;
+  }
+  .pack .sub { color: var(--ink-3); }
+  /* nutrition-label spec list */
+  .spec { margin: 18px 0 0; border-top: 6px solid var(--ink); }
+  .spec-head {
+    display: flex; justify-content: space-between;
+    padding: 6px 0; border-bottom: 2px solid var(--ink);
+    font-family: var(--mono); font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+  }
+  .spec li {
+    display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+    padding: 9px 0; border-bottom: 1px solid var(--rule);
+    font-size: 15px;
+  }
+  .spec ul { list-style: none; margin: 0; padding: 0; }
+  .spec code { font-family: var(--mono); font-size: 12px; color: var(--green-ink); }
+  .spec .v { font-family: var(--mono); font-size: 11px; color: var(--ink-3); flex: none; }
+  .pack-foot {
+    display: flex; justify-content: space-between; align-items: flex-end; gap: 12px;
+    margin-top: auto; padding-top: 22px;
+  }
+  .meter { flex: 1; display: grid; gap: 6px; }
+  .meter-row { display: flex; justify-content: space-between; color: var(--ink-2); }
+  .meter-bar { height: 8px; background: var(--paper); border: 1px solid var(--ink); }
+  .meter-bar i { display: block; height: 100%; width: 0; background: var(--ink); transition: width 1.4s var(--ease) .2s; }
+  .in .meter-bar i { width: var(--p); }
+
+  /* ---------- vault ---------- */
+  .vault { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+  .cell {
+    display: flex; flex-direction: column;
+    background: var(--card);
+    border: 1px solid var(--rule);
+    padding: 12px;
+    transition: transform .35s var(--ease), box-shadow .35s var(--ease);
+  }
+  .cell:hover { transform: translateY(-6px); box-shadow: 0 24px 48px -28px rgba(10,12,11,.45); }
+  .cell-view {
+    position: relative;
+    aspect-ratio: 4 / 3;
+    display: grid; place-items: center;
+    color: var(--mint);
+    overflow: hidden;
+    background:
+      linear-gradient(90deg, rgba(0,0,0,.55) 1px, transparent 1px) 0 0 / 14.28% 100%,
+      linear-gradient(0deg, rgba(0,0,0,.55) 1px, transparent 1px) 0 0 / 100% 25%,
+      radial-gradient(ellipse at 50% 45%, #061a10 20%, #1f7a50 70%, #b8f5c9 120%);
+  }
+  .cell-view::before {
+    /* glass-brick highlight per tile */
+    content: ""; position: absolute; inset: 0;
+    background:
+      linear-gradient(90deg, rgba(255,255,255,.12) 1px, transparent 3px) 2px 0 / 14.28% 100%,
+      linear-gradient(0deg, rgba(255,255,255,.1) 1px, transparent 3px) 0 2px / 100% 25%;
   }
   .cell-view::after {
-    content: "";
-    position: absolute; left: 0; right: 0; top: -40%; height: 40%;
-    background: linear-gradient(180deg, transparent, rgba(184,245,201,.18), transparent);
+    content: ""; position: absolute; left: 0; right: 0; top: -30%; height: 30%;
+    background: linear-gradient(180deg, transparent, rgba(184,245,201,.35), transparent);
     opacity: 0;
   }
   .cell:hover .cell-view::after { opacity: 1; animation: scan 1.6s linear infinite; }
   @keyframes scan { to { top: 100%; } }
-  .lock {
-    display: grid; place-items: center; gap: 10px; text-align: center;
-    color: var(--mint);
-  }
+  .cell-view .trk { position: absolute; transition: none; }
+  .lock { position: relative; display: grid; place-items: center; gap: 10px; text-align: center; }
   .lock svg { width: 34px; height: 34px; }
-  .cell-info { padding: 18px 22px 22px; display: grid; gap: 8px; }
-  .cell-info h3 {
-    margin: 0;
-    font-stretch: 112%; font-weight: 700; font-size: 1.1rem; text-transform: uppercase;
-  }
-  .cell-info .row { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .lock .tag { color: var(--white); text-shadow: -1px 0 rgba(255,40,90,.7), 1px 0 rgba(0,240,255,.7); }
+  .cell-info { padding: 16px 6px 6px; display: grid; gap: 6px; }
+  .cell-info .row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .cell-info h3 { margin: 0; font-stretch: 112%; font-weight: 800; font-size: 1.15rem; text-transform: uppercase; }
+  .cell-info .tag { color: var(--ink-3); }
 
   /* ---------- footer ---------- */
-  footer { position: relative; z-index: 1; border-top: 1px solid var(--hair); padding: 56px 0 32px; }
+  footer { border-top: 2px solid var(--ink); padding: clamp(56px, 8vw, 96px) 0 32px; scroll-margin-top: 52px; }
   .foot-grid {
     display: grid;
-    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
     gap: 40px; align-items: end;
   }
+  .foot-grid > div > .tag { color: var(--ink-2); }
   .slogan {
-    margin: 0;
+    margin: 18px 0 0;
     font-stretch: 125%; font-weight: 800;
-    font-size: clamp(1.6rem, 3.6vw, 2.8rem);
-    line-height: 1; text-transform: uppercase;
+    font-size: clamp(1.9rem, 4.6vw, 3.8rem);
+    line-height: .98; text-transform: uppercase;
   }
-  .slogan em { font-style: normal; color: var(--mint); }
+  .slogan em { font-style: normal; background: var(--mint); padding: 0 .12em; }
+  .slogan .heart { color: var(--green-ink); font-size: .6em; vertical-align: .35em; margin-left: .15em; }
   .links { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
   .links a {
     display: grid;
     grid-template-columns: auto 1fr auto;
     align-items: center; gap: 16px;
-    padding: 14px 18px;
-    border: 1px solid var(--hair);
-    font-family: var(--mono); font-size: 13px; letter-spacing: .12em; text-transform: uppercase;
-    transition: border-color .25s, background .25s, color .25s;
+    padding: 15px 18px;
+    background: var(--card);
+    border: 1px solid var(--ink);
+    font-family: var(--mono); font-size: 13px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase;
+    transition: background .25s;
   }
-  .links a .c { color: var(--gray); font-size: 11px; }
-  .links a .arr { color: var(--mint); transition: transform .25s var(--ease); }
-  .links a:hover { border-color: var(--mint); background: rgba(184,245,201,.06); color: var(--mint); }
+  .links a .c { color: var(--ink-3); font-size: 11px; }
+  .links a .arr { transition: transform .25s var(--ease); }
+  .links a:hover { background: var(--mint); }
+  .links a:hover .c { color: var(--ink-2); }
   .links a:hover .arr { transform: translate(3px, -3px); }
   .foot-base {
     display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;
-    margin-top: 48px; padding-top: 18px;
-    border-top: 1px solid rgba(148,163,184,.12);
+    margin-top: 56px; padding-top: 16px;
+    border-top: 1px solid var(--rule);
+    color: var(--ink-2);
   }
 
   /* ---------- reveal ---------- */
@@ -491,35 +440,24 @@
   .no-js .reveal { opacity: 1; transform: none; }
 
   /* ---------- responsive ---------- */
-  @media (max-width: 900px) {
-    .hero-grid { grid-template-columns: 1fr; }
-    .specimen { max-width: 340px; width: 100%; margin: 0 auto; }
-    .timeline { grid-template-columns: 1fr; padding: 0 0 0 28px; gap: 24px; }
-    .timeline::before {
-      top: 0; bottom: 0; left: 6px; right: auto; width: 1px; height: auto;
-      background: linear-gradient(180deg, var(--mint) 0 25%, var(--hair) 25% 100%);
-    }
-    .node { top: 30px; left: -28px; }
-    .vault { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  @media (max-width: 960px) {
+    .packs, .vault { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .foot-grid { grid-template-columns: 1fr; }
+    .hero-row { grid-template-columns: 1fr; }
     .topbar nav { display: none; }
   }
-  @media (max-width: 600px) {
-    .sec-head { grid-template-columns: auto minmax(0, 1fr); gap: 14px; }
-    .sec-head h2 { font-stretch: 100%; font-size: clamp(1.25rem, 6.4vw, 2.2rem); overflow-wrap: anywhere; }
-    .hero h1 .sub-title { font-size: .5em; }
-    .topbar { position: relative; }
-    .topbar .wrap > .tag { display: none; }
-    .sec-head > .tag { display: none; }
-    .vault { grid-template-columns: 1fr; }
-    .cell { min-height: 260px; }
-    .topbar .wrap { padding-top: 8px; padding-bottom: 8px; gap: 8px; }
-    .topbar-left .tag { font-size: 10px; }
-    .specimen-scale { display: none; }
+  @media (max-width: 640px) {
+    .packs, .vault { grid-template-columns: 1fr; }
+    .topbar .wrap > .tag, .topbar-left > .tag { display: none; }
+    .hero h1 { font-stretch: 112%; }
+    .hero h1 .sub-title { font-size: .44em; }
+    .sec-head { grid-template-columns: 1fr; }
+    .sec-num { font-size: 4.2rem; justify-self: start; }
+    .sec-head h2 { font-stretch: 100%; font-size: clamp(1.3rem, 8vw, 2.4rem); }
     .links a { grid-template-columns: 1fr auto; }
     .links a .c { display: none; }
+    .trk:nth-child(n+7) { display: none; }
   }
-
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
     .reveal { opacity: 1; transform: none; }
@@ -534,63 +472,47 @@
       <span class="pill"><span class="dot dot--pulse"></span>yukai.page</span>
       <span class="tag">[SYS_STATUS: <b>OPTIMAL</b>] // YUKAI_NODE_01</span>
     </div>
-    <nav aria-label="Primary">
+    <nav class="tag" aria-label="Primary">
       <a href="#roadmap">Run_Log</a>
       <a href="#vault">Vault</a>
       <a href="#contact">Contact</a>
     </nav>
-    <span class="tag">UTC <span class="clock mono" id="clock">--:--:--</span></span>
+    <span class="tag">UTC <span class="clock" id="clock">--:--:--</span></span>
   </div>
 </header>
 
 <main>
   <!-- ========== HERO ========== -->
   <section class="hero" aria-labelledby="hero-title">
-    <div class="wrap">
-      <div class="hero-grid">
-        <div>
-          <div class="hero-meta">
-            <span class="pill">[YK_BIO_LOG]</span>
-            <span class="pill pill--cyan">[CONTAINMENT_LEVEL_01]</span>
-            <span class="pill pill--solid"><span class="dot dot--acid dot--pulse"></span>[SPECIMEN_ACTIVE]</span>
-          </div>
-          <h1 id="hero-title">
-            <span class="glitch" data-text="YUKAI">YUKAI</span> <span class="slash">//</span>
-            <span class="sub-title">Graphics &amp; C++<br>Engine Lab</span>
-          </h1>
-          <p class="hero-lede">
-            Self-taught <strong>Real-Time Rendering &amp; Modern C++ Engineer.</strong>
-            Specializing in Bio/Natural Shaders: <strong>Volumetric Cloud Raymarching</strong>,
-            <strong>Gerstner Waves</strong>, and <strong>Compute Shader Grass</strong>.
-          </p>
-          <div class="hero-cta">
-            <a class="btn btn--fill" href="#roadmap">View Experiment Log →</a>
-            <a class="btn btn--ghost" href="#vault">Open Specimen Vault</a>
-          </div>
-        </div>
+    <canvas id="glass" aria-hidden="true"></canvas>
+    <div class="trackers" id="trackers" aria-hidden="true"></div>
 
-        <figure class="specimen" aria-label="Animated Gerstner wave specimen">
-          <div class="specimen-label">
-            <span class="tag">SPEC_187 // <b>GERSTNER_FIELD</b></span>
-            <span class="tag">T+<span id="tick" class="mono">0000</span></span>
-          </div>
-          <div class="capsule">
-            <canvas id="waves" aria-hidden="true"></canvas>
-            <div class="capsule-readout">
-              <span class="val" id="amp">0.000</span>
-              <span class="tag">Σ AMPLITUDE</span>
-            </div>
-          </div>
-          <div class="specimen-scale" aria-hidden="true"></div>
-        </figure>
+    <div class="wrap hero-inner">
+      <div class="hero-meta">
+        <span class="pill">[YK_BIO_LOG]</span>
+        <span class="pill">[CONTAINMENT_LEVEL_01]</span>
+        <span class="pill pill--mint"><span class="dot dot--pulse"></span>[SPECIMEN_ACTIVE]</span>
       </div>
-
-      <div class="ruler" aria-hidden="true" style="margin-top:clamp(40px,6vw,72px)"></div>
-      <div class="coords" style="margin-top:0">
-        <span class="tag">LAT 25.0330°N</span>
-        <span class="tag">NODE // TPE-01</span>
-        <span class="tag">FRAME BUDGET // <b>16.6MS</b></span>
-        <span class="tag">LON 121.5654°E</span>
+      <h1 id="hero-title">
+        Yukai <span class="slash">//</span>
+        <span class="sub-title">Graphics &amp; C++ Engine Lab</span>
+      </h1>
+      <div class="hero-row">
+        <p class="hero-lede">
+          Self-taught <strong>Real-Time Rendering &amp; Modern C++ Engineer.</strong>
+          Specializing in Bio/Natural Shaders: <strong>Volumetric Cloud Raymarching</strong>,
+          <strong>Gerstner Waves</strong>, and <strong>Compute Shader Grass</strong>.
+        </p>
+        <div class="hero-cta">
+          <a class="btn btn--fill" href="#roadmap">Experiment Log →</a>
+          <a class="btn btn--ghost" href="#vault">Specimen Vault</a>
+        </div>
+      </div>
+      <div class="hero-foot tag">
+        <span>SUBJECT // <b>YUKAI</b></span>
+        <span>FIELD: GLASS_BRICK_REFRACTION.FRAG</span>
+        <span>FRAME BUDGET // <b>16.6MS</b></span>
+        <span>T+<span id="tick">0000</span></span>
       </div>
     </div>
   </section>
@@ -607,68 +529,99 @@
   <section class="section" id="roadmap" aria-labelledby="roadmap-title">
     <div class="wrap">
       <div class="sec-head">
-        <span class="sec-idx">01</span>
-        <h2 id="roadmap-title">Experimentation Run</h2>
-        <span class="tag">MILESTONE_TRACKER // 3 PHASES</span>
-        <div class="ruler" aria-hidden="true"></div>
+        <span class="sec-num" aria-hidden="true">01</span>
+        <div class="sec-title">
+          <span class="tag"><span>MILESTONE_TRACKER</span><span>3 PHASES // BATCH 2026</span></span>
+          <h2 id="roadmap-title">Experimentation Run</h2>
+        </div>
       </div>
 
-      <ol class="timeline">
-        <li class="card phase phase--active reveal">
-          <span class="node" aria-hidden="true"></span>
-          <div class="phase-top">
-            <span class="phase-id">[PHASE 01: GENESIS]</span>
-            <span class="pill pill--solid"><span class="dot dot--acid dot--pulse"></span>In Progress</span>
+      <ol class="packs">
+        <li class="pack reveal">
+          <div class="pack-top">
+            <span class="logo">YK</span>
+            <span class="pill pill--ink"><span class="dot dot--pulse"></span>In Progress</span>
+          </div>
+          <div class="pack-face">
+            <span class="code tag">[PHASE 01: GENESIS]</span>
+            <span class="big">01</span>
+            <span class="seal">35%<small>SYNTH</small></span>
           </div>
           <h3>Modern C++ &amp; 3D Math Fundamentals</h3>
-          <span class="codename">SUBJECT: CORE_LANGUAGE</span>
-          <ul class="focus">
-            <li>Memory Alignment</li>
-            <li>Smart Pointers&nbsp;<code>std::unique_ptr</code></li>
-            <li>RAII</li>
-            <li>Vector / Matrix Math</li>
-          </ul>
-          <div class="meter">
-            <div class="meter-row"><span class="tag">SYNTHESIS</span><span class="tag"><b>35%</b></span></div>
-            <div class="meter-bar"><i style="--p:35%"></i></div>
+          <span class="sub tag">SUBJECT: CORE_LANGUAGE</span>
+          <div class="spec">
+            <div class="spec-head"><span>Focus</span><span>Unit</span></div>
+            <ul>
+              <li>Memory Alignment <span class="v">F-01</span></li>
+              <li><span>Smart Pointers <code>std::unique_ptr</code></span> <span class="v">F-02</span></li>
+              <li>RAII <span class="v">F-03</span></li>
+              <li>Vector / Matrix Math <span class="v">F-04</span></li>
+            </ul>
+          </div>
+          <div class="pack-foot">
+            <div class="meter">
+              <div class="meter-row tag"><span>Synthesis</span><b>35%</b></div>
+              <div class="meter-bar"><i style="--p:35%"></i></div>
+            </div>
+            <div class="barcode" aria-hidden="true"></div>
           </div>
         </li>
 
-        <li class="card phase phase--next reveal">
-          <span class="node" aria-hidden="true"></span>
-          <div class="phase-top">
-            <span class="phase-id">[PHASE 02: RENDER_PIPE]</span>
-            <span class="pill pill--cyan">Upcoming</span>
+        <li class="pack pack--next reveal">
+          <div class="pack-top">
+            <span class="logo">YK</span>
+            <span class="pill">Upcoming</span>
+          </div>
+          <div class="pack-face">
+            <span class="code tag">[PHASE 02: RENDER_PIPE]</span>
+            <span class="big">02</span>
+            <span class="seal">05%<small>SYNTH</small></span>
           </div>
           <h3>Custom Engine &amp; OpenGL Pipeline</h3>
-          <span class="codename">SUBJECT: RENDER_BACKBONE</span>
-          <ul class="focus">
-            <li>Framebuffers</li>
-            <li>Shader Writing&nbsp;<code>HLSL / GLSL</code></li>
-            <li>RenderDoc Profiling</li>
-          </ul>
-          <div class="meter">
-            <div class="meter-row"><span class="tag">SYNTHESIS</span><span class="tag">05%</span></div>
-            <div class="meter-bar"><i style="--p:5%"></i></div>
+          <span class="sub tag">SUBJECT: RENDER_BACKBONE</span>
+          <div class="spec">
+            <div class="spec-head"><span>Focus</span><span>Unit</span></div>
+            <ul>
+              <li>Framebuffers <span class="v">F-01</span></li>
+              <li><span>Shader Writing <code>HLSL / GLSL</code></span> <span class="v">F-02</span></li>
+              <li>RenderDoc Profiling <span class="v">F-03</span></li>
+            </ul>
+          </div>
+          <div class="pack-foot">
+            <div class="meter">
+              <div class="meter-row tag"><span>Synthesis</span><b>05%</b></div>
+              <div class="meter-bar"><i style="--p:5%"></i></div>
+            </div>
+            <div class="barcode" aria-hidden="true"></div>
           </div>
         </li>
 
-        <li class="card phase phase--target reveal">
-          <span class="node" aria-hidden="true"></span>
-          <div class="phase-top">
-            <span class="phase-id">[PHASE 03: BIO_SIMULATION]</span>
+        <li class="pack pack--target reveal">
+          <div class="pack-top">
+            <span class="logo">YK</span>
             <span class="pill pill--dash">Target</span>
           </div>
+          <div class="pack-face">
+            <span class="code tag">[PHASE 03: BIO_SIMULATION]</span>
+            <span class="big">03</span>
+            <span class="seal">00%<small>SYNTH</small></span>
+          </div>
           <h3>Natural Element Shading</h3>
-          <span class="codename">SUBJECT: ORGANIC_SYSTEMS</span>
-          <ul class="focus">
-            <li>Raymarching Volumetric Clouds</li>
-            <li>Gerstner Wave Water</li>
-            <li>Instanced Compute Grass</li>
-          </ul>
-          <div class="meter">
-            <div class="meter-row"><span class="tag">SYNTHESIS</span><span class="tag">00%</span></div>
-            <div class="meter-bar"><i style="--p:0%"></i></div>
+          <span class="sub tag">SUBJECT: ORGANIC_SYSTEMS</span>
+          <div class="spec">
+            <div class="spec-head"><span>Focus</span><span>Unit</span></div>
+            <ul>
+              <li>Raymarching Volumetric Clouds <span class="v">F-01</span></li>
+              <li>Gerstner Wave Water <span class="v">F-02</span></li>
+              <li>Instanced Compute Grass <span class="v">F-03</span></li>
+            </ul>
+          </div>
+          <div class="pack-foot">
+            <div class="meter">
+              <div class="meter-row tag"><span>Synthesis</span><b>00%</b></div>
+              <div class="meter-bar"><i style="--p:0%"></i></div>
+            </div>
+            <div class="barcode" aria-hidden="true"></div>
           </div>
         </li>
       </ol>
@@ -679,17 +632,19 @@
   <section class="section" id="vault" aria-labelledby="vault-title" style="padding-top:0">
     <div class="wrap">
       <div class="sec-head">
-        <span class="sec-idx">02</span>
-        <h2 id="vault-title">Project Vault</h2>
-        <span class="tag">BIO_CONTAINMENT // SEALED</span>
-        <div class="ruler" aria-hidden="true"></div>
+        <span class="sec-num" aria-hidden="true">02</span>
+        <div class="sec-title">
+          <span class="tag"><span>BIO_CONTAINMENT</span><span>STATUS: SEALED</span></span>
+          <h2 id="vault-title">Project Vault</h2>
+        </div>
       </div>
-      <p class="vault-intro">Specimens are cultured in isolation and released once stable. Each cell below will hold a live shader demo, breakdown, and source.</p>
+      <p class="lede">Specimens are cultured in isolation and released once stable. Each cell below will hold a live shader demo, a technical breakdown, and source.</p>
 
-      <!-- To add a project: replace .cell-view contents with an <img>/<video>, wrap the .cell in <a href="...">. -->
+      <!-- To add a project: replace .cell-view contents with an <img>/<video>, and wrap the .cell in <a href="..."> -->
       <div class="vault">
         <article class="cell reveal">
           <div class="cell-view">
+            <span class="trk" style="left:28%;top:34%"></span>
             <div class="lock">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="5.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><circle cx="12" cy="15.5" r="1.4" fill="currentColor"/></svg>
               <span class="tag">[SPECIMEN_CONTAINED]</span>
@@ -698,12 +653,13 @@
           <div class="cell-info">
             <div class="row"><span class="tag">SPEC_001</span><span class="pill pill--dash">Sealed</span></div>
             <h3>Volumetric Clouds</h3>
-            <span class="tag">// SHADER DEMO COMING SOON</span>
+            <div class="row"><span class="tag">// Shader demo coming soon</span><div class="barcode" aria-hidden="true"></div></div>
           </div>
         </article>
 
         <article class="cell reveal">
           <div class="cell-view">
+            <span class="trk" style="left:70%;top:62%"></span>
             <div class="lock">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="5.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><circle cx="12" cy="15.5" r="1.4" fill="currentColor"/></svg>
               <span class="tag">[SPECIMEN_CONTAINED]</span>
@@ -712,12 +668,13 @@
           <div class="cell-info">
             <div class="row"><span class="tag">SPEC_002</span><span class="pill pill--dash">Sealed</span></div>
             <h3>Gerstner Ocean</h3>
-            <span class="tag">// SHADER DEMO COMING SOON</span>
+            <div class="row"><span class="tag">// Shader demo coming soon</span><div class="barcode" aria-hidden="true"></div></div>
           </div>
         </article>
 
         <article class="cell reveal">
           <div class="cell-view">
+            <span class="trk" style="left:36%;top:72%"></span>
             <div class="lock">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="5.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><circle cx="12" cy="15.5" r="1.4" fill="currentColor"/></svg>
               <span class="tag">[SPECIMEN_CONTAINED]</span>
@@ -726,7 +683,7 @@
           <div class="cell-info">
             <div class="row"><span class="tag">SPEC_003</span><span class="pill pill--dash">Sealed</span></div>
             <h3>Compute Grass Field</h3>
-            <span class="tag">// SHADER DEMO COMING SOON</span>
+            <div class="row"><span class="tag">// Shader demo coming soon</span><div class="barcode" aria-hidden="true"></div></div>
           </div>
         </article>
       </div>
@@ -740,7 +697,7 @@
     <div class="foot-grid">
       <div>
         <span class="tag">[TRANSMISSION_CHANNELS]</span>
-        <p class="slogan" style="margin-top:16px">Rendered by Yukai.<br>Co-Pilot: <em>Claude.</em></p>
+        <p class="slogan">Rendered by Yukai.<br>Co-Pilot: <em>Claude.</em><span class="heart" aria-hidden="true">♥</span></p>
       </div>
       <ul class="links">
         <li><a href="https://github.com/HuangYu-Kai" target="_blank" rel="noopener"><span class="c">[X:01 Y:00]</span><span>GitHub</span><span class="arr">↗</span></a></li>
@@ -748,9 +705,9 @@
         <li><a href="mailto:yukaihuang527@gmail.com"><span class="c">[X:03 Y:00]</span><span>Email</span><span class="arr">↗</span></a></li>
       </ul>
     </div>
-    <div class="foot-base">
-      <span class="tag">© <span id="year">2026</span> YUKAI // YUKAI.PAGE</span>
-      <span class="tag">YUKAI_NODE_01 // <b>END OF LOG</b></span>
+    <div class="foot-base tag">
+      <span>© <span id="year">2026</span> YUKAI // YUKAI.PAGE</span>
+      <span>YUKAI_NODE_01 // END OF LOG</span>
     </div>
   </div>
 </footer>
@@ -769,7 +726,6 @@
   };
   tickClock();
   setInterval(tickClock, 1000);
-
   document.getElementById("year").textContent = new Date().getFullYear();
 
   // Reveal on scroll
@@ -780,75 +736,193 @@
   }, { threshold: 0.15 });
   document.querySelectorAll(".reveal").forEach(el => io.observe(el));
 
-  // Gerstner wave specimen
-  const canvas = document.getElementById("waves");
-  const ctx = canvas.getContext("2d");
-  const ampEl = document.getElementById("amp");
-  const tickEl = document.getElementById("tick");
-  // [amplitude, wavelength, speed, steepness]
-  const waves = [
-    [14, 220, 1.1, 0.55],
-    [8, 120, 1.7, 0.45],
-    [4, 60, 2.4, 0.35],
-  ];
-  let w = 0, h = 0, dpr = 1, visible = true, frame = 0;
+  // Tracking markers drifting over the specimen
+  const trackers = document.getElementById("trackers");
+  const marks = [];
+  for (let i = 0; i < 11; i++) {
+    const el = document.createElement("span");
+    el.className = "trk";
+    if (i % 3 === 0) el.appendChild(document.createElement("span"));
+    trackers.appendChild(el);
+    marks.push(el);
+  }
+  const retarget = el => {
+    el.style.left = (22 + Math.random() * 56) + "%";
+    // keep markers above the hero copy, which takes more height on narrow screens
+    el.style.top = (12 + Math.random() * (innerWidth < 640 ? 14 : 40)) + "%";
+    const label = el.firstChild;
+    if (label) {
+      label.textContent = Math.random() < 0.5
+        ? (Math.random() * 900 + 100).toFixed(2)
+        : [0, 0, 0].map(() => pad(Math.floor(Math.random() * 60))).join(" ");
+    }
+  };
+  marks.forEach(retarget);
+  if (!reduced) {
+    setInterval(() => retarget(marks[Math.floor(Math.random() * marks.length)]), 420);
+  }
 
+  // Glass-brick refraction shader
+  const canvas = document.getElementById("glass");
+  const gl = canvas.getContext("webgl", { antialias: false, premultipliedAlpha: false });
+  if (!gl) return;
+
+  const vert = `
+    attribute vec2 aPos;
+    void main() { gl_Position = vec4(aPos, 0.0, 1.0); }`;
+
+  const frag = `
+    precision highp float;
+    uniform vec2 uRes;
+    uniform float uTime;
+    uniform vec2 uMouse;
+
+    float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+    float noise(vec2 p) {
+      vec2 i = floor(p), f = fract(p);
+      vec2 u = f * f * (3.0 - 2.0 * f);
+      return mix(mix(hash(i), hash(i + vec2(1, 0)), u.x),
+                 mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), u.x), u.y);
+    }
+    float fbm(vec2 p) {
+      float v = 0.0, a = 0.5;
+      for (int i = 0; i < 4; i++) { v += a * noise(p); p *= 2.03; a *= 0.5; }
+      return v;
+    }
+
+    // Brightness of the subject behind the glass (aspect-correct, centred space)
+    float scene(vec2 p) {
+      float t = uTime * 0.07;
+      float d = length(p * vec2(1.0, 0.82) - vec2(0.0, 0.04));
+      float body = smoothstep(0.62, 0.12, d) + smoothstep(0.5, 0.0, length(p * vec2(0.7, 1.6) - vec2(0.0, -0.62)));
+      float f = 0.6 * fbm(p * 3.2 + vec2(t, -t * 0.6)) + 0.4 * fbm(p * 6.5 - vec2(t * 1.4, t));
+      f = smoothstep(0.28, 0.78, f);
+      f = mix(f * 0.85 + 0.2, f * 0.07, clamp(body, 0.0, 1.0));
+      f += smoothstep(0.45, 1.15, d) * 0.95;
+      float flick = 0.85 + 0.15 * sin(uTime * 9.0) * sin(uTime * 2.3);
+      f += (exp(-length(p - vec2(-0.19, 0.13)) * 28.0) + exp(-length(p - vec2(0.19, 0.13)) * 28.0)) * 2.6 * flick;
+      f += exp(-length(p - uMouse) * 5.0) * 0.3;
+      return f;
+    }
+
+    vec3 tone(float v) {
+      vec3 c = mix(vec3(0.005, 0.03, 0.018), vec3(0.08, 0.52, 0.30), smoothstep(0.0, 0.55, v));
+      c = mix(c, vec3(0.72, 0.96, 0.79), smoothstep(0.45, 0.95, v));
+      return mix(c, vec3(1.0), smoothstep(0.95, 1.5, v));
+    }
+
+    void main() {
+      vec2 frag = gl_FragCoord.xy;
+      vec2 uv = frag / uRes;
+
+      // slight lens barrel
+      vec2 cc = uv - 0.5;
+      uv = 0.5 + cc * (1.0 + 0.06 * dot(cc, cc));
+      vec2 px = uv * uRes;
+
+      // glass bricks
+      float rows = 5.0;
+      vec2 size = vec2(uRes.y / rows * 0.62, uRes.y / rows);
+      vec2 cell = floor(px / size);
+      vec2 local = fract(px / size);
+      float h = hash(cell);
+      float mag = mix(-0.55, 0.45, h) + 0.08 * sin(uTime * 0.6 + h * 6.28);
+      vec2 wob = (vec2(noise(local * 2.5 + cell * 3.1 + uTime * 0.15),
+                       noise(local * 2.5 + cell * 1.7 - uTime * 0.12)) - 0.5) * 0.35;
+      vec2 refr = (cell + 0.5 + (local - 0.5) * mag + wob) * size;
+
+      // chromatic split along the brick's local axis
+      vec2 ca = (local - 0.5) * size * 0.1;
+      vec2 toP = 1.0 / uRes.y * vec2(1.0);
+      vec2 r = (refr + ca - 0.5 * uRes) * toP;
+      vec2 g = (refr - 0.5 * uRes) * toP;
+      vec2 b = (refr - ca - 0.5 * uRes) * toP;
+      vec3 col = vec3(tone(scene(r)).r, tone(scene(g)).g, tone(scene(b)).b);
+
+      // mortar grooves + edge highlights
+      vec2 e2 = min(local, 1.0 - local) * size;
+      float e = min(e2.x, e2.y);
+      col *= smoothstep(0.0, 3.0, e) * 0.85 + 0.15;
+      col += vec3(0.75, 0.95, 0.85) * smoothstep(4.0, 0.0, abs(e - 4.0)) * 0.22;
+      col += vec3(1.0) * pow(1.0 - local.y, 18.0) * 0.12;
+      // inner bevel sheen: glass blocks catch light along their vertical walls
+      float bevel = pow(abs(local.x - 0.5) * 2.0, 7.0);
+      col += tone(scene(g) + 0.45) * bevel * 0.4;
+
+      // vignette, scanlines, grain
+      col *= 1.0 - 0.55 * dot(cc, cc) * 2.2;
+      col *= 0.94 + 0.06 * sin(frag.y * 1.6);
+      col += (hash(frag + fract(uTime) * 91.0) - 0.5) * 0.07;
+
+      gl_FragColor = vec4(col, 1.0);
+    }`;
+
+  const compile = (type, src) => {
+    const s = gl.createShader(type);
+    gl.shaderSource(s, src);
+    gl.compileShader(s);
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) { console.error(gl.getShaderInfoLog(s)); return null; }
+    return s;
+  };
+  const vs = compile(gl.VERTEX_SHADER, vert);
+  const fs = compile(gl.FRAGMENT_SHADER, frag);
+  if (!vs || !fs) return;
+  const prog = gl.createProgram();
+  gl.attachShader(prog, vs);
+  gl.attachShader(prog, fs);
+  gl.linkProgram(prog);
+  gl.useProgram(prog);
+
+  const buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+  const aPos = gl.getAttribLocation(prog, "aPos");
+  gl.enableVertexAttribArray(aPos);
+  gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+
+  const uRes = gl.getUniformLocation(prog, "uRes");
+  const uTime = gl.getUniformLocation(prog, "uTime");
+  const uMouse = gl.getUniformLocation(prog, "uMouse");
+
+  // render below native resolution: cheaper, and the softness suits frosted glass
+  const SCALE = 0.75;
   const resize = () => {
-    dpr = Math.min(window.devicePixelRatio || 1, 2);
     const r = canvas.getBoundingClientRect();
-    w = r.width; h = r.height;
-    canvas.width = Math.round(w * dpr);
-    canvas.height = Math.round(h * dpr);
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    canvas.width = Math.max(1, Math.round(r.width * SCALE));
+    canvas.height = Math.max(1, Math.round(r.height * SCALE));
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    gl.uniform2f(uRes, canvas.width, canvas.height);
   };
-
-  // Sum of Gerstner waves along x: horizontal displacement + height
-  const gerstner = (x, t, phase) => {
-    let dx = 0, dy = 0;
-    for (const [A, L, S, Q] of waves) {
-      const k = (2 * Math.PI) / L;
-      const f = k * x - S * t + phase;
-      dx += Q * A * Math.cos(f);
-      dy += A * Math.sin(f);
-    }
-    return [x + dx, dy];
-  };
-
-  const draw = t => {
-    ctx.clearRect(0, 0, w, h);
-    const lines = 22;
-    const top = h * 0.16, span = h * 0.68;
-    for (let i = 0; i < lines; i++) {
-      const p = i / (lines - 1);
-      const y0 = top + p * span;
-      const depth = 0.35 + p * 0.65;
-      ctx.beginPath();
-      for (let x = -20; x <= w + 20; x += 6) {
-        const [gx, gy] = gerstner(x, t, i * 0.45);
-        const py = y0 - gy * depth;
-        x === -20 ? ctx.moveTo(gx, py) : ctx.lineTo(gx, py);
-      }
-      ctx.strokeStyle = i === 11
-        ? "rgba(0,240,255,0.85)"
-        : `rgba(184,245,201,${0.12 + p * 0.55})`;
-      ctx.lineWidth = i === 11 ? 1.4 : 1;
-      ctx.stroke();
-    }
-    const [, s] = gerstner(w / 2, t, 0);
-    ampEl.textContent = (s / 26).toFixed(3);
-    tickEl.textContent = String(frame % 10000).padStart(4, "0");
-  };
-
-  const loop = ms => {
-    if (visible) { frame++; draw(ms / 1000); }
-    requestAnimationFrame(loop);
-  };
-
   resize();
   window.addEventListener("resize", resize);
+
+  const mouse = { x: 0, y: 0, tx: 0, ty: 0 };
+  window.addEventListener("pointermove", e => {
+    const r = canvas.getBoundingClientRect();
+    mouse.tx = (e.clientX - r.left - r.width / 2) / r.height;
+    mouse.ty = -(e.clientY - r.top - r.height / 2) / r.height;
+  });
+
+  let visible = true;
   new IntersectionObserver(([e]) => { visible = e.isIntersecting; }).observe(canvas);
 
-  if (reduced) draw(1.2);
+  const tickEl = document.getElementById("tick");
+  let frame = 0;
+  const render = ms => {
+    mouse.x += (mouse.tx - mouse.x) * 0.06;
+    mouse.y += (mouse.ty - mouse.y) * 0.06;
+    gl.uniform1f(uTime, ms / 1000);
+    gl.uniform2f(uMouse, mouse.x, mouse.y);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+  };
+  const loop = ms => {
+    if (visible) {
+      render(ms);
+      if (++frame % 6 === 0) tickEl.textContent = String(frame % 10000).padStart(4, "0");
+    }
+    requestAnimationFrame(loop);
+  };
+  if (reduced) render(4000);
   else requestAnimationFrame(loop);
 })();
 </script>
