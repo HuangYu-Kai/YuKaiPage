@@ -434,27 +434,33 @@
     color: var(--ink-2);
   }
 
-  /* ---------- intro: capsules pour into YK ---------- */
+  /* ---------- intro: white lockup ---------- */
   .intro {
     position: fixed; inset: 0; z-index: 200;
-    background: var(--void);
+    display: grid; place-items: center;
+    padding: 0 var(--gutter);
+    background: #fff;
+    cursor: pointer;
     transition: opacity .45s ease, visibility .45s;
   }
-  .intro canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
-  .intro-tag {
-    position: absolute; left: var(--gutter); bottom: 24px;
-    color: var(--gray);
+  .intro-lockup {
+    display: flex; align-items: flex-start;
+    gap: clamp(10px, 1.2vw, 18px);
+    color: var(--green-ink);
+    animation: lockup .6s var(--ease) both;
   }
-  .intro-tag b { color: var(--mint); font-weight: 500; }
-  .intro-skip {
-    position: absolute; right: var(--gutter); bottom: 18px;
-    padding: 8px 14px;
-    border-radius: 9999px;
-    border: 1px solid rgba(184,245,201,.4);
-    background: transparent; color: var(--mint);
-    cursor: pointer;
+  .intro-mark {
+    font-family: var(--display); font-stretch: 125%; font-weight: 900;
+    font-size: clamp(3.2rem, 10vw, 7.5rem);
+    line-height: .78;
+    letter-spacing: -.02em;
   }
-  .intro-skip:hover { background: rgba(184,245,201,.12); }
+  .intro-name {
+    font-family: var(--display); font-weight: 500;
+    font-size: clamp(1rem, 2.1vw, 1.7rem);
+    line-height: 1.08;
+  }
+  @keyframes lockup { from { opacity: 0; transform: scale(.96); } }
   .intro--done { opacity: 0; visibility: hidden; pointer-events: none; }
   .no-js .intro { display: none; }
 
@@ -491,9 +497,10 @@
 <body class="no-js">
 
 <div class="intro" id="intro" aria-hidden="true">
-  <canvas id="intro-canvas"></canvas>
-  <span class="intro-tag tag">YUKAI_NODE_01 // <b id="intro-status">INITIALIZING</b> <span id="intro-pct">000</span>%</span>
-  <button class="intro-skip tag" id="intro-skip" type="button">Skip →</button>
+  <div class="intro-lockup">
+    <span class="intro-mark">YK</span>
+    <span class="intro-name">Yukai's<br>Personal Page</span>
+  </div>
 </div>
 
 <header class="topbar">
@@ -743,172 +750,22 @@
 </footer>
 
 <script>
-// Intro: pixel-block glitch, then capsules pour in and settle into "YK", then glitch out.
+// Intro: a quiet white lockup, then fade into the page.
 function playIntro(reduced) {
   const intro = document.getElementById("intro");
-  const canvas = document.getElementById("intro-canvas");
-  const ctx = canvas.getContext("2d");
-  const statusEl = document.getElementById("intro-status");
-  const pctEl = document.getElementById("intro-pct");
-  const PALETTE = ["#050a07", "#0d2a1c", "#1f7a50", "#5fd99a", "#b8f5c9", "#f8fafc"];
-  const TOTAL = 3.1;            // seconds
-  let done = false, raf = 0;
-
+  if (reduced) { intro.remove(); return; }
+  let done = false;
   const finish = () => {
     if (done) return;
     done = true;
-    cancelAnimationFrame(raf);
     intro.classList.add("intro--done");
     document.documentElement.style.overflow = "";
     setTimeout(() => intro.remove(), 600);
   };
-  if (reduced) { intro.remove(); return; }
-
   document.documentElement.style.overflow = "hidden";
-  document.getElementById("intro-skip").addEventListener("click", finish);
   intro.addEventListener("click", finish);
   window.addEventListener("keydown", finish, { once: true });
-
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  const W = innerWidth, H = innerHeight;
-  canvas.width = W * dpr;
-  canvas.height = H * dpr;
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-  // Sample the "YK" letterforms into capsule targets
-  const buildPills = () => {
-    const off = document.createElement("canvas");
-    off.width = W; off.height = H;
-    const o = off.getContext("2d");
-    o.font = `900 100px Archivo, "Arial Black", sans-serif`;
-    if ("fontStretch" in o) o.fontStretch = "expanded";
-    const size = Math.min((W * 0.72) / (o.measureText("YK").width / 100), H * 0.62);
-    o.font = `900 ${size}px Archivo, "Arial Black", sans-serif`;
-    if ("fontStretch" in o) o.fontStretch = "expanded";
-    o.textAlign = "center";
-    o.textBaseline = "middle";
-    o.fillStyle = "#fff";
-    o.fillText("YK", W / 2, H / 2 + size * 0.04);
-    const data = o.getImageData(0, 0, W, H).data;
-
-    const unit = Math.max(7, Math.min(W, H) / 52);
-    const step = unit * 1.15;
-    const pills = [];
-    for (let y = step / 2; y < H; y += step) {
-      for (let x = step / 2; x < W; x += step) {
-        const jx = x + (Math.random() - 0.5) * unit * 0.5;
-        const jy = y + (Math.random() - 0.5) * unit * 0.5;
-        if (data[(Math.floor(jy) * W + Math.floor(jx)) * 4 + 3] < 128) continue;
-        const ty = jy / H;
-        pills.push({
-          tx: jx, ty: jy,
-          sx: jx + (Math.random() - 0.5) * W * 0.25,
-          sy: -unit * 4 - Math.random() * H * 0.6,
-          a0: Math.random() * Math.PI * 2,
-          a1: Math.random() * Math.PI,
-          delay: 0.55 + (1 - ty) * 0.75 + Math.random() * 0.35,  // bottom fills first, like pouring
-          dur: 0.55 + Math.random() * 0.25,
-          kind: Math.random() < 0.72 ? 0 : 1,                      // capsule or round tablet
-          tone: Math.random() < 0.55 ? 0 : 1,
-          s: unit * (0.85 + Math.random() * 0.3),
-        });
-      }
-    }
-    return pills;
-  };
-
-  const easeOutBack = p => { const c = 1.6; return 1 + (c + 1) * Math.pow(p - 1, 3) + c * Math.pow(p - 1, 2); };
-
-  const drawPill = (p, x, y, ang) => {
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.rotate(ang);
-    const s = p.s;
-    if (p.kind === 0) {
-      const L = s * 2.1, R = s * 0.45;
-      ctx.beginPath();
-      ctx.roundRect(-L / 2, -R, L, R * 2, R);
-      ctx.fillStyle = "#f8fafc";
-      ctx.fill();
-      ctx.save();
-      ctx.clip();
-      ctx.fillStyle = p.tone ? "#5fd99a" : "#b8f5c9";
-      ctx.fillRect(-L / 2, -R, L / 2, R * 2);
-      ctx.fillStyle = "rgba(255,255,255,.35)";
-      ctx.fillRect(-L / 2, -R * 0.75, L, R * 0.35);
-      ctx.restore();
-      ctx.strokeStyle = "rgba(5,10,7,.45)";
-      ctx.lineWidth = 1;
-      ctx.stroke();
-    } else {
-      ctx.beginPath();
-      ctx.arc(0, 0, s * 0.6, 0, Math.PI * 2);
-      ctx.fillStyle = p.tone ? "#b8f5c9" : "#e9efe9";
-      ctx.fill();
-      ctx.strokeStyle = "rgba(5,10,7,.45)";
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(-s * 0.35, 0);
-      ctx.lineTo(s * 0.35, 0);
-      ctx.stroke();
-    }
-    ctx.restore();
-  };
-
-  // Dithered pixel blocks, datamosh style
-  const glitch = amount => {
-    const n = Math.floor(160 * amount);
-    for (let i = 0; i < n; i++) {
-      const bw = 8 * (1 + Math.floor(Math.random() * 10));
-      const bh = 8 * (1 + Math.floor(Math.random() * 6));
-      const x = Math.floor(Math.random() * W / 8) * 8;
-      const y = Math.floor(Math.random() * H / 8) * 8;
-      ctx.fillStyle = PALETTE[Math.floor(Math.random() * PALETTE.length)];
-      ctx.globalAlpha = 0.5 + Math.random() * 0.5;
-      ctx.fillRect(x, y, bw, bh);
-      if (Math.random() < 0.5) {
-        ctx.fillStyle = "rgba(5,10,7,.6)";
-        for (let lx = x; lx < x + bw; lx += 3) ctx.fillRect(lx, y, 1, bh);
-      }
-    }
-    ctx.globalAlpha = 1;
-  };
-
-  const start = pills => {
-    const t0 = performance.now();
-    const frame = now => {
-      if (done) return;
-      const t = (now - t0) / 1000;
-      ctx.fillStyle = "#050a07";
-      ctx.fillRect(0, 0, W, H);
-
-      for (const p of pills) {
-        const k = (t - p.delay) / p.dur;
-        if (k <= 0) continue;
-        const e = k >= 1 ? 1 : easeOutBack(k);
-        const x = p.sx + (p.tx - p.sx) * Math.min(1, k * 1.4);
-        const y = p.sy + (p.ty - p.sy) * e;
-        drawPill(p, x, y, p.a0 + (p.a1 - p.a0) * Math.min(1, k));
-      }
-
-      if (t < 0.8) glitch(1 - t / 0.8);
-      if (t > TOTAL - 0.35) glitch((t - (TOTAL - 0.35)) / 0.35);
-
-      const pct = Math.min(100, Math.floor((t / (TOTAL - 0.4)) * 100));
-      pctEl.textContent = String(pct).padStart(3, "0");
-      statusEl.textContent = pct < 30 ? "INITIALIZING" : pct < 100 ? "SYNTHESIZING" : "SPECIMEN_READY";
-
-      if (t >= TOTAL) finish();
-      else raf = requestAnimationFrame(frame);
-    };
-    raf = requestAnimationFrame(frame);
-  };
-
-  // Wait briefly for the display font so the letterforms are right
-  const fontReady = document.fonts
-    ? Promise.race([document.fonts.load('900 100px Archivo'), new Promise(r => setTimeout(r, 700))])
-    : Promise.resolve();
-  fontReady.then(() => { if (!done) start(buildPills()); });
+  setTimeout(finish, 1900);
 }
 
 (() => {
