@@ -447,8 +447,18 @@
     display: flex; align-items: flex-start;
     gap: clamp(10px, 1.2vw, 18px);
     color: var(--green-ink);
-    animation: lockup .6s var(--ease) both;
   }
+  /* giant flash: JS sets --dx/--dy/--s so the mark fills the screen, then drops the class */
+  .intro-mark { transition: transform .6s cubic-bezier(.7, 0, .15, 1); }
+  .intro-name { transition: opacity .4s ease .35s, transform .4s var(--ease) .35s; }
+  .intro--pending .intro-lockup { opacity: 0; }
+  .intro--big .intro-mark {
+    transition: none;
+    transform: translate(var(--dx), var(--dy)) scale(var(--s));
+    animation: flash .18s steps(2) 2;
+  }
+  .intro--big .intro-name { opacity: 0; transform: translateX(-12px); transition: none; }
+  @keyframes flash { 50% { opacity: .15; } }
   .intro-mark {
     font-family: var(--display); font-stretch: 125%; font-weight: 900;
     font-size: clamp(3.2rem, 10vw, 7.5rem);
@@ -460,7 +470,6 @@
     font-size: clamp(1rem, 2.1vw, 1.7rem);
     line-height: 1.08;
   }
-  @keyframes lockup { from { opacity: 0; transform: scale(.96); } }
   .intro--done { opacity: 0; visibility: hidden; pointer-events: none; }
   .no-js .intro { display: none; }
 
@@ -496,7 +505,7 @@
 </head>
 <body class="no-js">
 
-<div class="intro" id="intro" aria-hidden="true">
+<div class="intro intro--pending" id="intro" aria-hidden="true">
   <div class="intro-lockup">
     <span class="intro-mark">YK</span>
     <span class="intro-name">Yukai's<br>Personal Page</span>
@@ -765,7 +774,26 @@ function playIntro(reduced) {
   document.documentElement.style.overflow = "hidden";
   intro.addEventListener("click", finish);
   window.addEventListener("keydown", finish, { once: true });
-  setTimeout(finish, 1900);
+
+  // Blow the mark up to fill the screen, flash it, then let it settle into the lockup
+  const mark = intro.querySelector(".intro-mark");
+  const play = () => {
+    if (done) return;
+    const r = mark.getBoundingClientRect();
+    const s = Math.min((innerWidth * 0.9) / r.width, (innerHeight * 0.8) / r.height);
+    intro.style.setProperty("--s", s);
+    intro.style.setProperty("--dx", `${innerWidth / 2 - (r.left + r.width / 2)}px`);
+    intro.style.setProperty("--dy", `${innerHeight / 2 - (r.top + r.height / 2)}px`);
+    intro.classList.add("intro--big");
+    intro.classList.remove("intro--pending");
+    setTimeout(() => intro.classList.remove("intro--big"), 650);
+    setTimeout(finish, 2600);
+  };
+  // measure with the real font, but never wait long for it
+  const fontReady = document.fonts
+    ? Promise.race([document.fonts.load('900 100px Archivo'), new Promise(r => setTimeout(r, 400))])
+    : Promise.resolve();
+  fontReady.then(play);
 }
 
 (() => {
