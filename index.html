@@ -444,6 +444,7 @@
     transition: opacity .45s ease, visibility .45s;
   }
   .intro-lockup {
+    position: relative; z-index: 1;
     display: flex; align-items: flex-start;
     gap: clamp(10px, 1.2vw, 18px);
     color: var(--green-ink);
@@ -454,7 +455,6 @@
     position: absolute; inset: 0; width: 100%; height: 100%;
     display: none;
     image-rendering: pixelated;
-    mix-blend-mode: multiply;
     pointer-events: none;
   }
   .intro--big .intro-noise { display: block; }
@@ -799,25 +799,74 @@ function playIntro(reduced) {
   // Blow the mark up to fill the screen, flash it, then let it settle into the lockup
   const mark = intro.querySelector(".intro-mark");
 
-  // Low-res TV static with a few torn scan bars; returns a stop function
+  // 8x8 Bayer matrix, normalised thresholds for ordered dithering
+  const BAYER = (() => {
+    let b = [[0, 2], [3, 1]];
+    for (let n = 2; n < 8; n *= 2) {
+      const nb = [];
+      for (let y = 0; y < n * 2; y++) {
+        nb[y] = [];
+        for (let x = 0; x < n * 2; x++) nb[y][x] = 4 * b[y % n][x % n] + [[0, 2], [3, 1]][(y / n) | 0][(x / n) | 0];
+      }
+      b = nb;
+    }
+    return b.map(r => r.map(v => (v + 0.5) / 64));
+  })();
+
+  // Datamosh-style blocks rendered as 1-bit ordered dither; returns a stop function
   const noise = () => {
     const c = document.getElementById("intro-noise");
-    const w = c.width = Math.ceil(innerWidth / 3);
-    const h = c.height = Math.ceil(innerHeight / 3);
+    const PX = 4;                                   // screen pixels per dither pixel
+    const w = c.width = Math.ceil(innerWidth / PX);
+    const h = c.height = Math.ceil(innerHeight / PX);
     const g = c.getContext("2d");
     const img = g.createImageData(w, h);
-    let id = 0;
-    const tick = () => {
-      const d = img.data;
-      for (let i = 0; i < d.length; i += 4) {
-        const v = 185 + Math.random() * 70;
-        d[i] = d[i + 1] = d[i + 2] = v;
-        d[i + 3] = 255;
+    const level = new Float32Array(w * h);
+    const tone = new Uint8Array(w * h);
+    const INKS = [[11, 122, 71], [5, 10, 7], [95, 217, 154]];
+    let id = 0, frame = 0;
+
+    const fillRect = (x0, y0, rw, rh, lv, t, kind) => {
+      for (let y = Math.max(0, y0); y < Math.min(h, y0 + rh); y++) {
+        for (let x = Math.max(0, x0); x < Math.min(w, x0 + rw); x++) {
+          const i = y * w + x;
+          let v = lv;
+          if (kind === 1) v = lv * (1 - (x - x0) / rw);          // horizontal ramp
+          else if (kind === 2) v = x % 3 === 0 ? 0.9 : lv * 0.4;  // vertical scan stripes
+          level[i] = v;
+          tone[i] = t;
+        }
       }
-      g.putImageData(img, 0, 0);
-      for (let n = 0; n < 4; n++) {
-        g.fillStyle = Math.random() < 0.5 ? "rgba(11,122,71,.35)" : "rgba(5,10,7,.25)";
-        g.fillRect(0, Math.random() * h, w, 1 + Math.random() * 6);
+    };
+
+    const tick = () => {
+      if (frame++ % 2 === 0) {                      // hold each layout for two frames: choppier
+        const cell = 8;
+        for (let y = 0; y < h; y += cell) {
+          for (let x = 0; x < w; x += cell) {
+            fillRect(x, y, cell, cell, Math.pow(Math.random(), 2.2) * 0.55, Math.random() < 0.8 ? 0 : 1, 0);
+          }
+        }
+        for (let n = 0; n < 45; n++) {
+          const rw = 8 * (1 + Math.floor(Math.random() * 9));
+          const rh = 4 * (1 + Math.floor(Math.random() * 6));
+          fillRect(Math.floor(Math.random() * w / 4) * 4, Math.floor(Math.random() * h / 4) * 4,
+                   rw, rh, 0.25 + Math.random() * 0.75, Math.floor(Math.random() * 3), Math.floor(Math.random() * 3));
+        }
+        const d = img.data;
+        for (let y = 0; y < h; y++) {
+          const row = BAYER[y & 7];
+          for (let x = 0; x < w; x++) {
+            const i = y * w + x, o = i * 4;
+            const on = level[i] > row[x & 7];
+            const ink = INKS[tone[i]];
+            d[o] = on ? ink[0] : 255;
+            d[o + 1] = on ? ink[1] : 255;
+            d[o + 2] = on ? ink[2] : 255;
+            d[o + 3] = 255;
+          }
+        }
+        g.putImageData(img, 0, 0);
       }
       id = requestAnimationFrame(tick);
     };
